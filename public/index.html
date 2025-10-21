@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Login page head -->
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Login</h2>
+        <!-- Login form -->
+        <form id="loginForm">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <div id="loginMsg"></div>
+        <div class="link">
+            No account? <a href="register.html">Register</a>
+        </div>
+    </div>
+    <script>
+        // Login form submit handler
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: form.username.value,
+                    password: form.password.value
+                })
+            });
+            const data = await res.json();
+            document.getElementById('loginMsg').textContent = data.error || 'Login successful!';
+            document.getElementById('loginMsg').className = data.error ? 'error' : 'success';
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                // Check isAdmin and redirect
+                const check = await fetch('/api/check-admin', {
+                    headers: { 'Authorization': 'Bearer ' + data.token }
+                });
+                const info = await check.json();
+                setTimeout(() => {
+                    window.location.href = info.isAdmin ? 'admin.html' : 'profile.html';
+                }, 1000);
+            }
+        };
+    </script>
+</body>
+</html>

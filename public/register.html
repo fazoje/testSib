@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Registration page head -->
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Register</h2>
+        <!-- Registration form -->
+        <form id="registerForm">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="text" name="first_name" placeholder="First name" required>
+            <input type="text" name="last_name" placeholder="Last name" required>
+            <select name="gender" required style="margin-bottom:16px; padding:10px; border:1px solid #dfe6e9; border-radius:6px; font-size:16px; background:#f5f6fa; color:#636e72;">
+                <option value="" disabled selected>Gender</option>
+                <option value="male">&#9794; Male</option>
+                <option value="female">&#9792; Female</option>
+                <option value="other">&#9895; Other</option>
+            </select>
+            <input type="date" name="birthdate" placeholder="Birthdate" required>
+            <button type="submit">Register</button>
+        </form>
+        <div id="registerMsg"></div>
+        <div class="link">
+            Already have an account? <a href="index.html">Login</a>
+        </div>
+    </div>
+    <script>
+        // Escape HTML to prevent XSS
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/[<>&"'`]/g, function (c) {
+                return ({
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '&': '&amp;',
+                    '"': '&quot;',
+                    "'": '&#39;',
+                    '`': '&#96;'
+                })[c];
+            });
+        }
+
+        // Registration form submit handler
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: form.username.value,
+                    password: form.password.value,
+                    first_name: form.first_name.value,
+                    last_name: form.last_name.value,
+                    gender: form.gender.value,
+                    birthdate: form.birthdate.value
+                })
+            });
+            const data = await res.json();
+            document.getElementById('registerMsg').textContent = escapeHTML(data.error || 'Registration successful!');
+            document.getElementById('registerMsg').className = data.error ? 'error' : 'success';
+            if (!data.error) {
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }
+        };
+    </script>
+</body>
+</html>

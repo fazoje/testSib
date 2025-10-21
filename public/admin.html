@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        th, td { border: 1px solid #dfe6e9; padding: 8px; text-align: left; }
+        th { background: #f5f6fa; }
+        .admin-edit-btn { background: #00b894; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+        .admin-delete-btn { color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Admin Panel</h2>
+        <!-- Admin panel controls -->
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+            <button type="button" id="logoutBtn" style="background:#d63031;">Logout</button>
+            <button type="button" id="openCreateUserModal" style="background:#00b894; margin-left:8px;">Create User</button>
+            <span id="adminInfo" style="font-weight:500; color:#636e72; margin-left:16px;"></span>
+        </div>
+        <div id="adminMsg" class="msg"></div>
+        <!-- Search and sort controls -->
+        <div style="margin-bottom:16px;">
+            <input type="text" id="searchInput" placeholder="Search by username, first name, last name" style="padding:6px; border-radius:6px; border:1px solid #dfe6e9; width:220px; margin-right:12px;">
+            <label>Sort by: 
+                <select id="sortField">
+                    <option value="id">ID</option>
+                    <option value="username">Username</option>
+                    <option value="first_name">First name</option>
+                    <option value="birthdate">Birthdate</option>
+                </select>
+            </label>
+            <label>
+                <select id="sortOrder">
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </select>
+            </label>
+        </div>
+        <!-- Users table -->
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>First name</th>
+                    <th>Birthdate</th>
+                    <th>Admin</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <!-- Pagination controls -->
+        <div id="pagination" style="margin-top:16px; text-align:center;"></div>
+        <div style="margin-top:8px; text-align:center;">
+            <input type="number" id="gotoPageInput" min="1" style="width:60px; padding:4px; border-radius:6px; border:1px solid #dfe6e9;">
+            <button type="button" id="gotoPageBtn" style="background:#0984e3; color:#fff; border:none; border-radius:6px; padding:4px 12px; margin-left:4px;">Go</button>
+        </div>
+    </div>
+
+    <!-- Create user modal -->
+    <div id="createUserModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px 32px; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.15); min-width:300px; position:relative;">
+            <h3 style="margin-top:0;">Create User</h3>
+            <form id="createUserForm">
+                <!-- User creation fields -->
+                <label for="create_username">Username</label>
+                <input type="text" name="username" id="create_username" required>
+                <label for="create_password">Password</label>
+                <input type="password" name="password" id="create_password" required>
+                <label for="create_first_name">First name</label>
+                <input type="text" name="first_name" id="create_first_name" required>
+                <label for="create_last_name">Last name</label>
+                <input type="text" name="last_name" id="create_last_name" required>
+                <label for="create_gender">Gender</label>
+                <select name="gender" id="create_gender" required>
+                    <option value="male">&#9794; Male</option>
+                    <option value="female">&#9792; Female</option>
+                    <option value="other">&#9895; Other</option>
+                </select>
+                <label for="create_birthdate">Birthdate</label>
+                <input type="date" name="birthdate" id="create_birthdate" required>
+                <label for="create_isAdmin">Admin</label>
+                <input type="checkbox" name="isAdmin" id="create_isAdmin">
+                <button type="submit" style="background:#00b894;">Create</button>
+                <button type="button" id="closeCreateUserModal" style="background:#d63031; margin-left:8px;">Cancel</button>
+            </form>
+            <div id="createUserMsg" class="msg"></div>
+        </div>
+    </div>
+
+    <!-- View user modal -->
+    <div id="viewUserModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px 32px; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.15); min-width:300px; position:relative;">
+            <h3 style="margin-top:0;">User Details</h3>
+            <!-- User details fields -->
+            <div style="margin-bottom:12px;"><strong>ID:</strong> <span id="view_id"></span></div>
+            <div style="margin-bottom:12px;"><strong>Username:</strong> <span id="view_username"></span></div>
+            <div style="margin-bottom:12px;"><strong>First name:</strong> <span id="view_first_name"></span></div>
+            <div style="margin-bottom:12px;"><strong>Last name:</strong> <span id="view_last_name"></span></div>
+            <div style="margin-bottom:12px;"><strong>Gender:</strong> <span id="view_gender"></span></div>
+            <div style="margin-bottom:12px;"><strong>Birthdate:</strong> <span id="view_birthdate"></span></div>
+            <div style="margin-bottom:12px;"><strong>Admin:</strong> <span id="view_isAdmin"></span></div>
+            <div style="margin-bottom:12px;"><strong>Registration date:</strong> <span id="view_created_at"></span></div>
+            <button type="button" id="closeViewUserModal" style="background:#d63031; margin-left:8px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Edit user modal -->
+    <div id="editUserModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px 32px; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.15); min-width:300px; position:relative;">
+            <h3 style="margin-top:0;">Edit User</h3>
+            <form id="editUserForm">
+                <!-- User edit fields -->
+                <input type="hidden" name="id" id="edit_id">
+                <label for="edit_username">Username</label>
+                <input type="text" name="username" id="edit_username" required>
+                <label for="edit_password">Password (leave blank to keep unchanged)</label>
+                <input type="password" name="password" id="edit_password">
+                <label for="edit_first_name">First name</label>
+                <input type="text" name="first_name" id="edit_first_name" required>
+                <label for="edit_last_name">Last name</label>
+                <input type="text" name="last_name" id="edit_last_name" required>
+                <label for="edit_gender">Gender</label>
+                <select name="gender" id="edit_gender" required>
+                    <option value="male">&#9794; Male</option>
+                    <option value="female">&#9792; Female</option>
+                    <option value="other">&#9895; Other</option>
+                </select>
+                <label for="edit_birthdate">Birthdate</label>
+                <input type="date" name="birthdate" id="edit_birthdate" required>
+                <label for="edit_isAdmin">Admin</label>
+                <input type="checkbox" name="isAdmin" id="edit_isAdmin">
+                <label for="edit_created_at">Registration date</label>
+                <input type="text" name="created_at" id="edit_created_at" readonly>
+                <button type="submit" style="background:#00b894;">Save</button>
+                <button type="button" id="closeEditUserModal" style="background:#d63031; margin-left:8px;">Cancel</button>
+            </form>
+            <div id="editUserMsg" class="msg"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get JWT token from localStorage
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'index.html';
+
+        // Logout button handler
+        document.getElementById('logoutBtn').onclick = () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        };
+
+        // Pagination and sorting variables
+        let currentPage = 1;
+        let pageSize = 10;
+        let sortField = 'username';
+        let sortOrder = 'asc';
+        let totalUsers = 0;
+        let search = '';
+
+        // Sort field change handler
+        document.getElementById('sortField').onchange = function() {
+            sortField = this.value;
+            currentPage = 1;
+            loadUsers();
+        };
+        // Sort order change handler
+        document.getElementById('sortOrder').onchange = function() {
+            sortOrder = this.value;
+            currentPage = 1;
+            loadUsers();
+        };
+        // Search input handler
+        document.getElementById('searchInput').oninput = function() {
+            search = this.value.trim();
+            currentPage = 1;
+            loadUsers();
+        };
+
+        // Escape HTML to prevent XSS
+        function escapeHTML(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/[<>&"'`]/g, function (c) {
+                return ({
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '&': '&amp;',
+                    '"': '&quot;',
+                    "'": '&#39;',
+                    '`': '&#96;'
+                })[c];
+            });
+        }
+
+        // Load users from API
+        async function loadUsers() {
+            const params = new URLSearchParams({
+                page: currentPage,
+                pageSize: pageSize,
+                sortField: sortField,
+                sortOrder: sortOrder,
+                search: search
+            });
+            const res = await fetch(`/api/admin/users?${params.toString()}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (data.error) {
+                // Redirect to login if no access
+                window.location.href = 'index.html';
+                return;
+            }
+            totalUsers = data.total;
+            const tbody = document.getElementById('usersTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            data.users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHTML(user.id)}</td>
+                    <td>${escapeHTML(user.username)}</td>
+                    <td>${escapeHTML(user.first_name)}</td>
+                    <td>${user.birthdate ? escapeHTML(user.birthdate.slice(0,10)) : ''}</td>
+                    <td>${user.isAdmin ? 'Yes' : 'No'}</td>
+                    <td>
+                        <button class="admin-details-btn" data-id="${escapeHTML(user.id)}">Details</button>
+                        <button class="admin-edit-btn" data-id="${escapeHTML(user.id)}" style="background:#00b894; margin-left:8px;">Edit</button>
+                        <button class="admin-delete-btn" data-id="${escapeHTML(user.id)}" style="background:#d63031; margin-left:8px;">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            renderPagination();
+        }
+
+        // Render pagination controls
+        function renderPagination() {
+            const pages = Math.ceil(totalUsers / pageSize);
+            let html = '';
+
+            // Left arrow
+            if (currentPage > 1) {
+                html += `<button class="page-btn" data-page="${currentPage-1}" style="margin:2px;">&lt;</button>`;
+            }
+
+            // First page if current > 2
+            if (currentPage > 2) {
+                html += `<button class="page-btn" data-page="1" style="margin:2px;">1</button>`;
+                if (currentPage > 3) html += `<span style="margin:2px;">...</span>`;
+            }
+
+            // Current, previous, next pages
+            for (let i = Math.max(1, currentPage - 1); i <= Math.min(pages, currentPage + 1); i++) {
+                html += `<button class="page-btn" data-page="${i}" style="margin:2px;${i===currentPage?'background:#0984e3;color:#fff;':'background:#fff;color:#0984e3;'}">${i}</button>`;
+            }
+
+            // Last page if current < pages-1
+            if (currentPage < pages - 1) {
+                if (currentPage < pages - 2) html += `<span style="margin:2px;">...</span>`;
+                html += `<button class="page-btn" data-page="${pages}" style="margin:2px;">${pages}</button>`;
+            }
+
+            // Right arrow
+            if (currentPage < pages) {
+                html += `<button class="page-btn" data-page="${currentPage+1}" style="margin:2px;">&gt;</button>`;
+            }
+
+            document.getElementById('pagination').innerHTML = html;
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.onclick = () => {
+                    currentPage = parseInt(btn.getAttribute('data-page'));
+                    loadUsers();
+                };
+            });
+
+            // Update min/max for goto page input
+            document.getElementById('gotoPageInput').max = pages;
+        }
+
+        // Table click handler for details, edit, delete
+        document.getElementById('usersTable').onclick = (e) => {
+            // Details button
+            if (e.target.classList.contains('admin-details-btn')) {
+                const id = e.target.dataset.id;
+                fetch(`/api/admin/users?page=1&pageSize=1000&sortField=id&sortOrder=asc`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const user = data.users.find(u => u.id == id);
+                    if (!user) return;
+                    document.getElementById('view_id').textContent = escapeHTML(user.id);
+                    document.getElementById('view_username').textContent = escapeHTML(user.username);
+                    document.getElementById('view_first_name').textContent = escapeHTML(user.first_name);
+                    document.getElementById('view_last_name').textContent = escapeHTML(user.last_name);
+                    document.getElementById('view_gender').textContent = escapeHTML(user.gender);
+                    document.getElementById('view_birthdate').textContent = user.birthdate ? escapeHTML(user.birthdate.slice(0,10)) : '';
+                    document.getElementById('view_isAdmin').textContent = user.isAdmin ? 'Yes' : 'No';
+                    document.getElementById('view_created_at').textContent = user.created_at ? escapeHTML(user.created_at.slice(0,19).replace('T', ' ')) : '';
+                    document.getElementById('viewUserModal').style.display = 'flex';
+                });
+            }
+            // Edit button
+            if (e.target.classList.contains('admin-edit-btn')) {
+                const id = e.target.dataset.id;
+                fetch(`/api/admin/users?page=1&pageSize=1000&sortField=id&sortOrder=asc`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const user = data.users.find(u => u.id == id);
+                    if (!user) return;
+                    document.getElementById('edit_id').value = escapeHTML(user.id);
+                    document.getElementById('edit_username').value = escapeHTML(user.username);
+                    document.getElementById('edit_password').value = '';
+                    document.getElementById('edit_first_name').value = escapeHTML(user.first_name);
+                    document.getElementById('edit_last_name').value = escapeHTML(user.last_name);
+                    document.getElementById('edit_gender').value = escapeHTML(user.gender);
+                    document.getElementById('edit_birthdate').value = user.birthdate ? escapeHTML(user.birthdate.slice(0,10)) : '';
+                    document.getElementById('edit_isAdmin').checked = user.isAdmin;
+                    document.getElementById('edit_created_at').value = user.created_at ? escapeHTML(user.created_at.slice(0,19).replace('T', ' ')) : '';
+                    document.getElementById('editUserMsg').textContent = '';
+                    document.getElementById('editUserModal').style.display = 'flex';
+                });
+            }
+            // Delete button
+            if (e.target.classList.contains('admin-delete-btn')) {
+                const id = e.target.dataset.id;
+                if (confirm('Are you sure you want to delete this user?')) {
+                    fetch('/api/admin/users/' + id, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    }).then(res => res.json()).then(data => {
+                        if (data.error) {
+                            document.getElementById('adminMsg').textContent = data.error;
+                            document.getElementById('adminMsg').className = 'msg error';
+                        } else {
+                            document.getElementById('adminMsg').textContent = 'User deleted!';
+                            document.getElementById('adminMsg').className = 'msg success';
+                            loadUsers();
+                        }
+                    });
+                }
+            }
+        };
+
+        // Close view user modal
+        document.getElementById('closeViewUserModal').onclick = () => {
+            document.getElementById('viewUserModal').style.display = 'none';
+        };
+
+        // Close edit user modal
+        document.getElementById('closeEditUserModal').onclick = () => {
+            document.getElementById('editUserModal').style.display = 'none';
+        };
+
+        // Save user changes
+        document.getElementById('editUserForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            const username = document.getElementById('edit_username').value;
+            const first_name = document.getElementById('edit_first_name').value;
+            const last_name = document.getElementById('edit_last_name').value;
+            const gender = document.getElementById('edit_gender').value;
+            const birthdate = document.getElementById('edit_birthdate').value;
+            const password = document.getElementById('edit_password').value;
+            const isAdmin = document.getElementById('edit_isAdmin').checked;
+            const body = { username, first_name, last_name, gender, birthdate, isAdmin };
+            if (password) body.password = password;
+            const res = await fetch('/api/admin/users/' + id, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            document.getElementById('editUserMsg').textContent = data.error || 'User updated successfully!';
+            document.getElementById('editUserMsg').className = data.error ? 'msg error' : 'msg success';
+            if (!data.error) {
+                setTimeout(() => {
+                    document.getElementById('editUserModal').style.display = 'none';
+                    loadUsers();
+                }, 1000);
+            }
+        };
+
+        // Open create user modal
+        document.getElementById('openCreateUserModal').onclick = () => {
+            document.getElementById('createUserModal').style.display = 'flex';
+            document.getElementById('createUserMsg').textContent = '';
+            document.getElementById('createUserForm').reset();
+        };
+        // Close create user modal
+        document.getElementById('closeCreateUserModal').onclick = () => {
+            document.getElementById('createUserModal').style.display = 'none';
+        };
+
+        // Create user form submit handler
+        document.getElementById('createUserForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('create_username').value;
+            const password = document.getElementById('create_password').value;
+            const first_name = document.getElementById('create_first_name').value;
+            const last_name = document.getElementById('create_last_name').value;
+            const gender = document.getElementById('create_gender').value;
+            const birthdate = document.getElementById('create_birthdate').value;
+            const isAdmin = document.getElementById('create_isAdmin').checked;
+            const res = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ username, password, first_name, last_name, gender, birthdate, isAdmin })
+            });
+            const data = await res.json();
+            document.getElementById('createUserMsg').textContent = data.error || 'User created successfully!';
+            document.getElementById('createUserMsg').className = data.error ? 'msg error' : 'msg success';
+            if (!data.error) {
+                setTimeout(() => {
+                    document.getElementById('createUserModal').style.display = 'none';
+                    loadUsers();
+                }, 1000);
+            }
+        };
+
+        // Goto page button handler
+        document.getElementById('gotoPageBtn').onclick = () => {
+            const pages = Math.ceil(totalUsers / pageSize);
+            let val = parseInt(document.getElementById('gotoPageInput').value);
+            if (!val || val < 1 || val > pages) return;
+            currentPage = val;
+            loadUsers();
+        };
+
+        // Load admin info (current user)
+        async function loadAdminInfo() {
+            const res = await fetch('/api/profile', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (data && data.username) {
+                // Get current user id from JWT token
+                let id = '';
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    id = payload.id;
+                } catch {}
+                document.getElementById('adminInfo').textContent = `ID: ${id} | Username: ${data.username}`;
+            }
+        }
+
+        // Initial load
+        loadUsers();
+        loadAdminInfo();
+    </script>
+</body>
+</html>
