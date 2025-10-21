@@ -14,13 +14,14 @@
 1. Edit the `.env` file in the project root:
 
    ```
+   JWT_SECRET=your_jwt_secret_key
    DB_HOST=your_mysql_host
    DB_USER=your_mysql_user
    DB_PASSWORD=your_mysql_password
    DB_NAME=your_db_name
    ```
 
-   Replace the data with your actual MySQL credentials.
+   Replace the data with your actual MySQL credentials and JWT token.
 
 2. Make sure your MySQL server is running and the database `sibers_test` exists.
 
